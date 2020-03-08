@@ -23,7 +23,7 @@ import pytest
 from libqtile import layout
 import libqtile.config
 import libqtile.hook
-from .layout_utils import assert_focused, assert_focus_path_unordered
+from .layout_utils import assert_focused, assert_focus_path, assert_focus_path_unordered
 
 
 class AllLayoutsConfig:
@@ -53,7 +53,9 @@ class AllLayoutsConfig:
             else:
                 # Explicitly exclude the Slice layout, since it depends on
                 # other layouts (tested here) and has its own specific tests
-                if test and layout_name != 'Slice':
+                # Also exclude the Floating layout, as it's not suitable as
+                # a tiled layout, use FloatingTile instead.
+                if test and layout_name not in ('Slice', 'Floating'):
                     yield layout_name, layout_cls
 
     @classmethod
@@ -130,6 +132,30 @@ def test_focus_cycle(qtile):
 
     # Assert that the layout cycles the focus on all windows
     assert_focus_path_unordered(qtile, 'float1', 'float2', 'one', 'two', 'three')
+
+    def get_focus_path(self):
+        first = self.c.window.info()['name']
+        focus_path = []
+        while True:
+            self.c.group.next_window()
+            wname = self.c.window.info()['name']
+            if wname == first:
+                break
+            focus_path.append(wname)
+        return focus_path
+
+    # Toggle the current window's fullscreen state, and the focus path should not change
+    assert_focused(qtile, "three")
+    focus_path = get_focus_path(qtile)
+    qtile.c.window.toggle_fullscreen()
+    qtile.c.window.toggle_fullscreen()
+    assert_focus_path(focus_path)
+    # Toggle another window
+    qtile.c.group.focus_by_name("one")
+    focus_path = get_focus_path(qtile)
+    qtile.c.window.toggle_fullscreen()
+    qtile.c.window.toggle_fullscreen()
+    assert_focus_path(focus_path)
 
 
 @each_layout_config
