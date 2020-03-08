@@ -25,7 +25,7 @@ The objects in the command graph and command resolution on the objects
 import abc
 import inspect
 import traceback
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 
 from libqtile.command_graph import SelectorType
 from libqtile.log_utils import logger
@@ -35,7 +35,9 @@ class SelectError(Exception):
     """Error raised in resolving a command graph object"""
 
     def __init__(self, err_string: str, name: str, selectors: List[SelectorType]):
-        super().__init__(err_string)
+        super().__init__("{}, name: {}, selectors: {}".format(err_string,
+                                                              name,
+                                                              selectors))
         self.name = name
         self.selectors = selectors
 
@@ -109,7 +111,7 @@ class CommandObject(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def _select(self, name: str, sel: Optional[str]) -> "CommandObject":
+    def _select(self, name: str, sel: Optional[Union[str, int]]) -> "CommandObject":
         """Select the given item of the given item class
 
         This method is called with the following guarantees:
